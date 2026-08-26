@@ -10,49 +10,33 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-function mixColor(t: number) {
-  const r = Math.round(lerp(BASE_COLOR.r, HIGHLIGHT_COLOR.r, t));
-  const g = Math.round(lerp(BASE_COLOR.g, HIGHLIGHT_COLOR.g, t));
-  const b = Math.round(lerp(BASE_COLOR.b, HIGHLIGHT_COLOR.b, t));
-  return `rgb(${r}, ${g}, ${b})`;
-}
-
 export default function About() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const cellsRef = useRef<HTMLDivElement[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const textCoordsRef = useRef<{ x: number; y: number }[]>([]);
   const mouseRef = useRef({ x: -9999, y: -9999 });
   const rafRef = useRef<number | undefined>(undefined);
   const startTimeRef = useRef<number>(0);
 
-  // Build the grid cells to match container size
+  // Build the grid and calculate initial text coordinates
   const buildGrid = useCallback(() => {
     const container = containerRef.current;
-    const grid = gridRef.current;
-    if (!container || !grid) return;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
 
-    const cols = Math.ceil(container.offsetWidth / CELL_SIZE);
-    const rows = Math.ceil(container.offsetHeight / CELL_SIZE);
+    const width = container.offsetWidth;
+    const height = container.offsetHeight;
+    const dpr = window.devicePixelRatio || 1;
 
-    grid.innerHTML = '';
-    cellsRef.current = [];
-    grid.style.gridTemplateColumns = `repeat(${cols}, ${CELL_SIZE}px)`;
-    grid.style.gridTemplateRows = `repeat(${rows}, ${CELL_SIZE}px)`;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
 
-    for (let i = 0; i < cols * rows; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'grid-cell';
-      cell.style.width = `${CELL_SIZE}px`;
-      cell.style.height = `${CELL_SIZE}px`;
-      cell.style.opacity = '0';
-      cell.style.background = mixColor(0);
-      cell.style.willChange = 'transform, opacity, background-color';
-      cell.style.transition =
-        'opacity 0.3s ease, transform 0.25s ease, background-color 0.3s ease';
-      grid.appendChild(cell);
-      cellsRef.current.push(cell);
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.scale(dpr, dpr);
     }
     
     // Update text coordinates for hover effects
@@ -72,8 +56,21 @@ export default function About() {
     if (!startTimeRef.current) startTimeRef.current = timestamp;
     const t = (timestamp - startTimeRef.current) / 1000; // seconds elapsed
 
-    const cols = Math.ceil((containerRef.current?.offsetWidth ?? 0) / CELL_SIZE);
-    const rows = Math.ceil((containerRef.current?.offsetHeight ?? 0) / CELL_SIZE);
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = container.offsetWidth;
+    const height = container.offsetHeight;
+    
+    // Clear canvas for the new frame
+    ctx.clearRect(0, 0, width, height);
+
+    const cols = Math.ceil(width / CELL_SIZE);
+    const rows = Math.ceil(height / CELL_SIZE);
     const { x: mx, y: my } = mouseRef.current;
 
     const hoverRadius = 220;
@@ -83,10 +80,9 @@ export default function About() {
     const waveCols = 10; // how many columns from the right edge participate
     const waveStartCol = Math.max(0, cols - waveCols);
     const waveSpeed = 1.6; // vertical travel speed
-    const waveFrequency = 0.9; // how tight the sine ripples are
     const waveWidth = 4.0; // rows of falloff around the wave peak
 
-    cellsRef.current.forEach((cell, i) => {
+    for (let i = 0; i < cols * rows; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);
       const cx = col * CELL_SIZE + CELL_SIZE / 2;
@@ -121,15 +117,22 @@ export default function About() {
       const strength = Math.max(mouseStrength, waveStrength * 1.5);
 
       if (strength > 0.01) {
-        cell.style.transform = `translate(${tx}px, ${ty}px) scale(${0.88 + strength * 0.12})`;
-        cell.style.opacity = `${strength * 0.6}`;
-        cell.style.background = mixColor(strength);
-      } else {
-        cell.style.transform = 'translate(0px, 0px) scale(0.85)';
-        cell.style.opacity = '0';
-        cell.style.background = mixColor(0);
+        const scale = 0.88 + strength * 0.12;
+        const opacity = strength * 0.6;
+        
+        ctx.save();
+        ctx.translate(cx + tx, cy + ty);
+        ctx.scale(scale, scale);
+        
+        const r = Math.round(lerp(BASE_COLOR.r, HIGHLIGHT_COLOR.r, strength));
+        const g = Math.round(lerp(BASE_COLOR.g, HIGHLIGHT_COLOR.g, strength));
+        const b = Math.round(lerp(BASE_COLOR.b, HIGHLIGHT_COLOR.b, strength));
+        
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        ctx.fillRect(-CELL_SIZE / 2, -CELL_SIZE / 2, CELL_SIZE, CELL_SIZE);
+        ctx.restore();
       }
-    });
+    }
 
     // --- Text Letters Animation ---
     const textHoverRadius = 150;
@@ -150,8 +153,11 @@ export default function About() {
         const tx = Math.cos(angle) * strength * textPullStrength;
         const ty = Math.sin(angle) * strength * textPullStrength;
         span.style.transform = `translate(${tx}px, ${ty}px)`;
-      } else {
+        span.dataset.moved = "true";
+      } else if (span.dataset.moved === "true") {
+        // Only reset style if it was previously moved to save DOM operations
         span.style.transform = 'translate(0px, 0px)';
+        span.dataset.moved = "false";
       }
     });
 
@@ -160,7 +166,7 @@ export default function About() {
 
   useEffect(() => {
     // A small delay to let custom fonts load before calculating coords
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       buildGrid();
     }, 100);
     
@@ -182,6 +188,7 @@ export default function About() {
     container?.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
+      clearTimeout(timer);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', handleResize);
       container?.removeEventListener('mousemove', handleMouseMove);
@@ -209,7 +216,7 @@ export default function About() {
             }
             return (
               <span key={wIdx} className="inline-block whitespace-pre">
-                {word.split('').map((char, cIdx) => {
+                {word.split('').map((char) => {
                   const idx = charIndex++;
                   return (
                     <span
@@ -234,6 +241,7 @@ export default function About() {
 
   return (
     <section
+      id="about"
       ref={containerRef}
       className="relative w-full min-h-screen flex flex-col mt-4 bg-[var(--color-body-bg)] text-[#D6D6B1] overflow-hidden cursor-none"
     >
@@ -249,8 +257,8 @@ export default function About() {
         }}
       />
 
-      {/* Interactive cells: mouse pull/highlight + ambient right-edge wave */}
-      <div ref={gridRef} className="absolute inset-0 z-0 grid pointer-events-none" />
+      {/* Interactive cells: mouse pull/highlight + ambient right-edge wave via Canvas */}
+      <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />
 
       {/* Header */}
       <div className="relative z-10 flex justify-between items-center px-8 py-6 border-b border-[#D6D6B1]/20 text-2xl md:text-3xl font-mono tracking-widest pointer-events-none">

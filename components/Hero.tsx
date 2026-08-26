@@ -80,6 +80,7 @@ export default function Hero() {
 
   return (
     <div
+      id="hero"
       ref={containerRef}
       className="relative w-full min-h-[calc(100vh-0.5rem)] md:min-h-[calc(100vh-0.5rem)] lg:min-h-[calc(100vh-1rem)] rounded-[38px] overflow-hidden flex flex-col bg-[var(--color-card-bg)] shadow-2xl"
     >
