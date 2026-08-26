@@ -1,9 +1,11 @@
 import Hero from "@/components/Hero";
+import About from "@/components/About";
 
 export default function Home() {
   return (
-    <main className="flex-1 w-full flex flex-col items-center justify-center p-2   md:p-3 lg:p-4">
+    <main className="flex-1 w-full flex flex-col items-center justify-center p-2 md:p-3 lg:p-4">
       <Hero />
+      <About />
     </main>
   );
 }

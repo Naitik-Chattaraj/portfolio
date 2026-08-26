@@ -11,7 +11,8 @@ body {
   background-color: var(--color-body-bg);
   color: #171717;
   font-family: var(--font-sans);
-  padding: 1rem; /* Space around the huge card */
+  padding: 1rem;
+  /* Space around the huge card */
   min-height: 100vh;
   display: flex;
 }
