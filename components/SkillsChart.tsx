@@ -3,10 +3,10 @@
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
-import HC_more from 'highcharts/highcharts-more';
 
 if (typeof window !== 'undefined') {
-  // Turbopack sometimes wraps commonjs exports, so unwrap .default if present
+  // Dynamically require highcharts-more on the client side only to avoid server evaluation errors.
+  const HC_more = require('highcharts/highcharts-more');
   const initMore = typeof HC_more === 'function' ? HC_more : (HC_more as any).default;
   if (typeof initMore === 'function') {
     initMore(Highcharts);
