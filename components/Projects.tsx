@@ -73,7 +73,7 @@ const options: ProjectOption[] = [
     iconSrc: '/icons/carcino.png',
     main: 'The Carcino Foundation',
     sub: 'The official website for The Carcino Foundation (2025-26)',
-    bgVideo: '/video/carcino-website.mp4',
+    bgVideo: '/video/carcinowebsite.mp4',
     defaultBg: '#8f29caff'
   },
   {
@@ -100,7 +100,7 @@ const options: ProjectOption[] = [
     iconSrc: '/icons/lumino-lens.png',
     main: 'LuminoLens',
     sub: 'Award winning website for 2025 Hackathon in DPSRPK.',
-    bgVideo: '/video/luminolens.mp4',
+    bgVideo: '/video/lumino-lens.mp4',
     defaultBg: '#1cffffff'
   }
 ];
