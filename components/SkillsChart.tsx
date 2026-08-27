@@ -5,10 +5,12 @@ import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import HC_more from 'highcharts/highcharts-more';
 
-// Turbopack sometimes wraps commonjs exports, so unwrap .default if present
-const initMore = typeof HC_more === 'function' ? HC_more : (HC_more as any).default;
-if (typeof initMore === 'function') {
-  initMore(Highcharts);
+if (typeof window !== 'undefined') {
+  // Turbopack sometimes wraps commonjs exports, so unwrap .default if present
+  const initMore = typeof HC_more === 'function' ? HC_more : (HC_more as any).default;
+  if (typeof initMore === 'function') {
+    initMore(Highcharts);
+  }
 }
 
 export interface SkillsChartHandle {
