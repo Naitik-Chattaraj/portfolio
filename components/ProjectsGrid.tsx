@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useState, type LucideIcon } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
-import { Snowflake, TreePine, Droplets, Sun } from 'lucide-react';
+import { Snowflake, TreePine, Droplets, Sun, type LucideIcon } from 'lucide-react';
 
 // ── Project data ──────────────────────────────────────────────────────────────
 // Mirror of the data in app/projects/[slug]/page.tsx.
