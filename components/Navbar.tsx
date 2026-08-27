@@ -9,22 +9,20 @@ export default function Navbar() {
 
   const pathname = usePathname();
 
-  // Derive active nav item from the current URL
+  // Derive the active nav pill from the current URL only (not scroll position)
   const activePage = pathname.startsWith('/projects') ? 'Projects'
-    : pathname === '/' ? 'Home'
-      : pathname.startsWith('/contact') ? 'Contact'
-        : 'Home';
+    : pathname.startsWith('/contact') ? 'Contact'
+      : 'Home';
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['hero', 'about', 'projects', 'skills'];
+      const sections = ['hero', 'about', 'projects', 'skills', 'contact'];
       let currentSection = 'Hero';
 
       for (const section of sections) {
         const el = document.getElementById(section);
         if (el) {
           const rect = el.getBoundingClientRect();
-          // Check if the section is in the middle of the viewport
           if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) {
             currentSection = section.charAt(0).toUpperCase() + section.slice(1);
           }
@@ -35,13 +33,15 @@ export default function Navbar() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    // Initial check
     handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const navItems = ['Home', 'Projects', 'Contact'];
+  const PILL_W = 105;
+  const PILL_GAP = 5;
+  const activeIdx = navItems.indexOf(activePage);
 
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-between items-end px-8 md:px-16 pb-4">
@@ -58,8 +58,10 @@ export default function Navbar() {
           <Link
             key={item}
             href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
-            className={`relative z-10 px-6 py-2 rounded-full text-lg font-medium transition-colors duration-300 ${activePage === item ? 'text-[#D6D6B1]' : 'text-gray-800 hover:text-black'
-              }`}
+            className={`relative z-10 px-6 py-2 rounded-full text-lg font-medium transition-colors duration-300 ${
+              activePage === item ? 'text-[#D6D6B1]' : 'text-gray-800 hover:text-black'
+            }`}
+            style={{ minWidth: PILL_W }}
           >
             {item}
           </Link>
@@ -68,8 +70,8 @@ export default function Navbar() {
         <div
           className="absolute top-1 bottom-1 bg-[#3F3F37]/80 rounded-full transition-all duration-300 ease-in-out"
           style={{
-            width: '100px',
-            left: activePage === 'Home' ? '4px' : activePage === 'Projects' ? '109px' : '208px',
+            width: PILL_W,
+            left: activeIdx >= 0 ? 4 + activeIdx * (PILL_W + PILL_GAP) : 4,
           }}
         />
       </div>

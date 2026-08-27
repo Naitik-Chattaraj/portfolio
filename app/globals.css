@@ -17,6 +17,10 @@ body {
   display: flex;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* 
  * Multi noise SVG pattern: 
  * Frequency 0.3 matches Figma's Size X=0.3

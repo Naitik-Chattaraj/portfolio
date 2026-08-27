@@ -1,13 +1,11 @@
 "use client";
 
-import React, { useRef, useLayoutEffect } from 'react';
+import React, { useRef, useLayoutEffect, useEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import dynamic from 'next/dynamic';
+import SkillsChart from './SkillsChart';
 
 gsap.registerPlugin(ScrollTrigger);
-
-const SkillsChart = dynamic(() => import('./SkillsChart'), { ssr: false });
 
 const Skills = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -16,14 +14,21 @@ const Skills = () => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartComponentRef = useRef<{ reflow: () => void }>(null);
   const charRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const [showChart, setShowChart] = React.useState(false);
-  const showChartRef = useRef(false);
 
   const segments = [
     { text: "The ", highlight: false },
     { text: "tools", highlight: true },
     { text: " behind the ideas", highlight: false }
   ];
+
+  // Pre-render reflow: give Highcharts a moment after mount to calculate
+  // the packed-bubble layout so it's ready before the scroll animation.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      chartComponentRef.current?.reflow();
+    }, 200);
+    return () => clearTimeout(t);
+  }, []);
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -38,14 +43,6 @@ const Skills = () => {
           pin: pinRef.current,
           invalidateOnRefresh: true,
         },
-        onUpdate: function () {
-          const progress = this.progress();
-          const shouldShow = progress > 0.55;
-          if (shouldShow !== showChartRef.current) {
-            showChartRef.current = shouldShow;
-            setShowChart(shouldShow);
-          }
-        }
       });
 
       tl.fromTo(activeChars,
@@ -55,8 +52,8 @@ const Skills = () => {
         .to(textRef.current, { opacity: 1, duration: 0.5 })
         .to(textRef.current, { opacity: 0, duration: 1 })
         .fromTo(chartRef.current,
-          { opacity: 0, scale: 0.8, pointerEvents: 'none' },
-          { opacity: 1, scale: 1, pointerEvents: 'auto', duration: 1.5 },
+          { autoAlpha: 0, scale: 0.8, pointerEvents: 'none' },
+          { autoAlpha: 1, scale: 1, pointerEvents: 'auto', duration: 1.5 },
           "-=0.5"
         );
 
@@ -65,24 +62,12 @@ const Skills = () => {
     return () => ctx.revert();
   }, []);
 
-  // Force Highcharts to re-measure its container once it's mounted and the
-  // GSAP opacity/scale tween has had a moment to settle. Packed bubble layout
-  // doesn't auto-reflow on CSS transform changes, only on a real resize event,
-  // so we nudge it here and also on window resize.
+  // Keep Highcharts reflowed on window resize.
   useLayoutEffect(() => {
-    if (!showChart) return;
-    const t = setTimeout(() => {
-      chartComponentRef.current?.reflow();
-    }, 100);
-
     const handleResize = () => chartComponentRef.current?.reflow();
     window.addEventListener('resize', handleResize);
-
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [showChart]);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const chartOptions = {
     chart: {
@@ -255,14 +240,13 @@ const Skills = () => {
             {renderText()}
           </h2>
 
-          {/* Bubble Chart */}
+          {/* Bubble Chart — mounted immediately so Highcharts pre-renders;
+              GSAP controls opacity/scale reveal on scroll. */}
           <div
             ref={chartRef}
-            className="w-[50%] h-full opacity-0"
+            className="w-[50%] h-full"
           >
-            {showChart && (
-              <SkillsChart ref={chartComponentRef} options={chartOptions as any} />
-            )}
+            <SkillsChart ref={chartComponentRef} options={chartOptions as any} />
           </div>
         </div>
       </div>
