@@ -45,7 +45,7 @@ export default function ScrollSnapper() {
           // Query the exact, fresh DOM height of the element
           const elHeight = el.getBoundingClientRect().height || el.offsetHeight;
           const viewportHeight = window.innerHeight;
-          
+
           // Center the section if it is smaller than viewport. Otherwise, snap to its top.
           let centeredScroll = rawTop;
           if (elHeight < viewportHeight) {
