@@ -59,23 +59,30 @@ export default function Navbar() {
   const activeIdx = navItems.indexOf(activePage);
 
   return (
-    <div
-      className="fixed bottom-6 left-0 right-0 z-50 flex justify-between items-end px-8 md:px-16 pb-4 transition-all duration-500"
-      style={{
-        opacity: footerVisible ? 0 : 1,
-        pointerEvents: footerVisible ? 'none' : 'auto',
-        transform: footerVisible ? 'translateY(20px)' : 'translateY(0)',
-      }}
-    >
+    <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-between items-end px-8 md:px-16 pb-4 pointer-events-none">
       {/* Left Pill */}
-      <div className="bg-[#D6D6B1]/50 backdrop-blur-md rounded-full px-8 py-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]">
+      <div
+        className="bg-[#D6D6B1]/50 backdrop-blur-md rounded-full px-8 py-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] transition-all duration-500 ease-out"
+        style={{
+          opacity: footerVisible ? 0 : 1,
+          pointerEvents: footerVisible ? 'none' : 'auto',
+          transform: footerVisible ? 'translateX(-40px)' : 'translateX(0)',
+        }}
+      >
         <span className="text-xl font-medium">
           {pathname.startsWith('/projects/') ? 'Projects' : activeSection}
         </span>
       </div>
 
       {/* Right Navbar Pill */}
-      <div className="relative flex bg-[#D6D6B1]/50 backdrop-blur-md rounded-full p-1 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] ">
+      <div
+        className="relative flex bg-[#D6D6B1]/50 backdrop-blur-md rounded-full p-1 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] transition-all duration-500 ease-out"
+        style={{
+          opacity: footerVisible ? 0 : 1,
+          pointerEvents: footerVisible ? 'none' : 'auto',
+          transform: footerVisible ? 'translateX(40px)' : 'translateX(0)',
+        }}
+      >
         {navItems.map((item) => (
           <Link
             key={item}
