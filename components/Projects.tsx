@@ -134,9 +134,9 @@ export default function Projects() {
 
       <div className="relative z-10 w-full flex flex-col items-center h-full flex-grow">
         <div className="flex w-full justify-between items-center text-2xl md:text-3xl font-mono mb-16 md:mb-24 uppercase tracking-widest text-[#232223]">
-          <span>003</span>
+          <span>002</span>
           <span>My Projects</span>
-          <span>003</span>
+          <span>002</span>
         </div>
 
         <h2 className="text-3xl md:text-5xl lg:text-[4rem] font-medium tracking-tight text-center mb-12 md:mb-20 text-[#232223]">
