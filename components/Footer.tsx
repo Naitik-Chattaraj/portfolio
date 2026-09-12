@@ -519,20 +519,20 @@ export default function Footer() {
       >
         <div className="absolute inset-0 bg-noise pointer-events-none mix-blend-multiply opacity-60" />
 
-        <div className="relative h-full w-full flex justify-between items-start p-8 md:p-14 lg:p-20">
+        <div className="relative h-full w-full flex justify-between items-start p-6 sm:p-10 md:p-14 lg:p-20 overflow-hidden">
           {/* Sitemap */}
-          <div className="flex flex-col gap-3 pt-20 md:gap-4 mt-2 md:mt-4">
-            <h3 className="text-5xl sm:text-6xl md:text-7xl pb-5 lg:text-8xl font-normal text-[#F4EADF] tracking-tight">
+          <div className="flex flex-col gap-2 sm:gap-3 lg:gap-4 mt-2 lg:mt-4">
+            <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl lg:pt-10 xl:pt-16 pb-2 lg:pb-5 font-normal text-[#F4EADF] tracking-tight">
               Sitemap
             </h3>
-            <div className="flex flex-col gap-1.5 md:gap-2">
+            <div className="flex flex-col gap-1 sm:gap-1.5 md:gap-2">
               <a
                 href="#hero"
                 onMouseEnter={(e) =>
                   handleLinkMouseEnter({ type: 'home', icon: Home, color: '#3F3F37' }, e)
                 }
                 onMouseLeave={handleLinkMouseLeave}
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
               >
                 Home
               </a>
@@ -542,7 +542,7 @@ export default function Footer() {
                   handleLinkMouseEnter({ type: 'projects', icon: FolderGit2, color: '#3F3F37' }, e)
                 }
                 onMouseLeave={handleLinkMouseLeave}
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
               >
                 Projects
               </a>
@@ -552,7 +552,7 @@ export default function Footer() {
                   handleLinkMouseEnter({ type: 'contact', icon: Mail, color: '#3F3F37' }, e)
                 }
                 onMouseLeave={handleLinkMouseLeave}
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
               >
                 Contact
               </a>
@@ -560,11 +560,11 @@ export default function Footer() {
           </div>
 
           {/* Socials */}
-          <div className="flex flex-col gap-3 md:gap-4 text-right mt-2 md:mt-4">
-            <h3 className="text-5xl sm:text-6xl md:text-7xl pt-20 pb-5 lg:text-8xl font-normal text-[#F4EADF] tracking-tight">
+          <div className="flex flex-col gap-2 sm:gap-3 lg:gap-4 text-right mt-2 lg:mt-4">
+            <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl lg:pt-10 xl:pt-16 pb-2 lg:pb-5 font-normal text-[#F4EADF] tracking-tight">
               Socials
             </h3>
-            <div className="flex flex-col gap-1.5 md:gap-2">
+            <div className="flex flex-col gap-1 sm:gap-1.5 md:gap-2">
               <a
                 href="https://linkedin.com/in/naitik-chattaraj"
                 target="_blank"
@@ -573,7 +573,7 @@ export default function Footer() {
                   handleLinkMouseEnter({ type: 'linkedin', icon: LinkedinIcon, color: '#0077B5' }, e)
                 }
                 onMouseLeave={handleLinkMouseLeave}
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
               >
                 Linkedin
               </a>
@@ -585,7 +585,7 @@ export default function Footer() {
                   handleLinkMouseEnter({ type: 'github', icon: GithubIcon, color: '#24292E' }, e)
                 }
                 onMouseLeave={handleLinkMouseLeave}
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
               >
                 Github
               </a>
@@ -597,7 +597,7 @@ export default function Footer() {
                   handleLinkMouseEnter({ type: 'instagram', icon: InstagramIcon, color: '#E1306C' }, e)
                 }
                 onMouseLeave={handleLinkMouseLeave}
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-medium text-[#252523] hover:opacity-75 transition-opacity cursor-none"
               >
                 Instagram
               </a>
