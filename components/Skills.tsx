@@ -42,6 +42,7 @@ const Skills = () => {
           scrub: 1,
           pin: pinRef.current,
           invalidateOnRefresh: true,
+          refreshPriority: 5,
         },
       });
 

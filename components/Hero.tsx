@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useLayoutEffect } from 'react';
+import { useRef, useLayoutEffect, useState, useEffect } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -8,13 +8,88 @@ import TextReveal, { type TextRevealHandle } from './TextReveal';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const CAROUSEL_ITEMS = [
+  { src: '/laptop.png', alt: 'Laptop' },
+  { src: '/guitar.png', alt: 'Guitar' },
+  { src: '/book.png', alt: 'Book' },
+];
+
 export default function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const heroContentRef = useRef<HTMLDivElement>(null);
   const textRevealWrapperRef = useRef<HTMLDivElement>(null);
   const textRevealHandleRef = useRef<TextRevealHandle>(null);
 
+  const [progress, setProgress] = useState(0);
+  const [animStage, setAnimStage] = useState<
+    'loading' | 'bar_fade' | 'name_slide' | 'photo_reveal' | 'completed'
+  >('loading');
+
+  useEffect(() => {
+    // Disable body scroll while loading
+    document.body.style.overflow = 'hidden';
+
+    let windowLoaded = false;
+    if (document.readyState === 'complete') {
+      windowLoaded = true;
+    } else {
+      const handleLoad = () => {
+        windowLoaded = true;
+      };
+      window.addEventListener('load', handleLoad);
+    }
+
+    const MIN_DURATION = 2600; // 2.6s total loading progress duration
+    const startTime = Date.now();
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const calculatedProgress = Math.min(
+        Math.floor((elapsed / MIN_DURATION) * 100),
+        windowLoaded ? 100 : 90
+      );
+
+      setProgress((prev) => {
+        const next = Math.max(prev, calculatedProgress);
+        if (next >= 100 && windowLoaded) {
+          clearInterval(interval);
+
+          // Step 1: Carousel ends at book (100%). Pause briefly then fade out progress bar & carousel
+          setTimeout(() => {
+            setAnimStage('bar_fade');
+
+            // Step 2: Name slides up & Designer-Developer-Storyteller text comes down
+            setTimeout(() => {
+              setAnimStage('name_slide');
+
+              // Step 3: naitik.png is revealed at the bottom!
+              setTimeout(() => {
+                setAnimStage('photo_reveal');
+
+                // Step 4: Loading sequence completed, unlock body scroll & sort/refresh ScrollTrigger
+                setTimeout(() => {
+                  setAnimStage('completed');
+                  document.body.style.overflow = '';
+                  ScrollTrigger.sort();
+                  ScrollTrigger.refresh();
+                }, 700);
+              }, 900); // Wait for name to finish sliding up before photo reveal
+            }, 450);
+          }, 250);
+        }
+        return next;
+      });
+    }, 30);
+
+    return () => {
+      clearInterval(interval);
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   useLayoutEffect(() => {
+    if (animStage !== 'completed') return;
+
     const ctx = gsap.context(() => {
       if (!textRevealHandleRef.current) return;
       const { chars, words, primaryColor, secondaryColor } =
@@ -29,13 +104,12 @@ export default function Hero() {
         scrollTrigger: {
           trigger: containerRef.current,
           start: 'top top',
-          end: '+=4000', // total scroll distance for the whole sequence — tune this
+          end: '+=4000', // total scroll distance for sequence
           scrub: 1,
           pin: true,
           pinSpacing: true,
-          // markers: true,
+          refreshPriority: 10,
           onUpdate: (self) => {
-            // Only run word-highlight logic during the "reveal" phase window (0.25–0.85 of progress)
             const p = gsap.utils.mapRange(0.3, 0.85, 0, 1, self.progress);
             if (p < 0 || p > 1) return;
 
@@ -55,28 +129,52 @@ export default function Hero() {
         },
       });
 
-      // Phase 1 (0 → 0.25): crossfade photo/name out, text wrapper in
       tl.to(heroContentRef.current, { opacity: 0, scale: 0.96, ease: 'none' }, 0)
         .to(
           textRevealWrapperRef.current,
           { opacity: 1, pointerEvents: 'auto', ease: 'none' },
           0.1
         )
-        // small delay / breathing room before words start revealing (0.25 → 0.3 = dead space)
         .to({}, { duration: 0.05 }, 0.25)
-        // Phase 2 (0.3 → 0.85): char-by-char reveal, synced with word-highlight in onUpdate above
         .fromTo(
           chars,
           { opacity: 0.2 },
           { opacity: 1, stagger: 0.03 / (chars.length / 50), ease: 'none' },
           0.3
         )
-        // Phase 3 (0.85 → 1): hold — nothing animates, revealed text just stays put
         .to({}, { duration: 0.15 }, 0.85);
     }, containerRef);
 
-    return () => ctx.revert();
-  }, []);
+    // Sort and refresh all ScrollTriggers after Hero layout settles so downstream sections recalculate positions
+    const timer = setTimeout(() => {
+      ScrollTrigger.sort();
+      ScrollTrigger.refresh();
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      ctx.revert();
+    };
+  }, [animStage]);
+
+  // Carousel item index during loading (0-33%: laptop, 33-66%: guitar, 66-100%: book)
+  const currentCarouselIndex = Math.min(
+    Math.floor((progress / 100) * CAROUSEL_ITEMS.length),
+    CAROUSEL_ITEMS.length - 1
+  );
+
+  const showProgressBar = animStage === 'loading';
+  const showCarousel = animStage === 'loading';
+  const nameIsUp =
+    animStage === 'name_slide' ||
+    animStage === 'photo_reveal' ||
+    animStage === 'completed';
+  const showStoryteller =
+    animStage === 'name_slide' ||
+    animStage === 'photo_reveal' ||
+    animStage === 'completed';
+  const showNaitikPhoto =
+    animStage === 'photo_reveal' || animStage === 'completed';
 
   return (
     <div
@@ -86,20 +184,89 @@ export default function Hero() {
     >
       <div className="absolute inset-0 bg-noise pointer-events-none mix-blend-multiply opacity-50 z-0 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.6)_100%)]"></div>
 
+      {/* Top Progress Bar inside container */}
+      <div
+        className={`absolute top-6 left-1/2 -translate-x-1/2 z-30 w-full max-w-xl px-6 flex items-center gap-3 transition-opacity duration-500 ease-out ${
+          showProgressBar ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="flex-1 bg-[#3A3930] h-4 md:h-5 rounded-full p-1 border border-[#2B2A23] shadow-inner relative overflow-hidden">
+          <div
+            className="bg-primary h-full rounded-full transition-all duration-100 ease-out shadow-sm"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <span className="text-[#3A3930] font-semibold text-base md:text-lg w-12 text-right tracking-tighter">
+          {progress}%
+        </span>
+      </div>
+
+      {/* Center Carousel Images (Laptop -> Guitar -> Book) */}
+      <div
+        className={`absolute inset-0 z-20 flex items-center justify-center p-4 pointer-events-none transition-opacity duration-500 ease-out ${
+          showCarousel ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        {CAROUSEL_ITEMS.map((item, idx) => (
+          <div
+            key={item.src}
+            className={`absolute transition-all duration-500 ease-in-out transform flex items-center justify-center w-full max-w-3xl md:max-w-4xl ${
+              idx === currentCarouselIndex
+                ? 'opacity-100 scale-100'
+                : 'opacity-0 scale-95'
+            }`}
+          >
+            <Image
+              src={item.src}
+              alt={item.alt}
+              width={1200}
+              height={1200}
+              className={`object-contain w-auto drop-shadow-2xl ${
+                item.src === '/guitar.png'
+                  ? 'max-h-[44vh] md:max-h-[50vh]'
+                  : 'max-h-[58vh] md:max-h-[66vh]'
+              }`}
+              priority
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Hero Content Container */}
       <div
         ref={heroContentRef}
-        className="flex flex-col items-center justify-between min-h-[85vh] relative z-10 w-full pt-16"
+        className="flex flex-col items-center justify-between min-h-[85vh] relative z-10 w-full pt-16 h-full flex-1"
       >
-        <div className="flex flex-col items-center text-center px-4 w-full">
+        {/* Title & Subtitle Wrapper */}
+        <div
+          className={`flex flex-col items-center text-center px-4 w-full transition-transform duration-1000 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+            nameIsUp
+              ? 'translate-y-0'
+              : 'translate-y-[62vh] md:translate-y-[68vh]'
+          }`}
+        >
           <h1 className="text-primary font-bold tracking-tight text-6xl md:text-[9rem] lg:text-[10rem] leading-none whitespace-nowrap text-ellipsis max-w-full">
             Naitik Chattaraj
           </h1>
-          <p className="mt-4 text-xl md:text-2xl font-regular tracking-[-7%]">
+          <p
+            className={`mt-4 text-xl md:text-2xl font-regular tracking-[-7%] transition-all duration-700 ease-out ${
+              showStoryteller
+                ? 'opacity-100 translate-y-0 delay-200'
+                : 'opacity-0 -translate-y-3 pointer-events-none'
+            }`}
+          >
             Designer · Developer · Storyteller
           </p>
         </div>
 
-        <div className="relative w-full max-w-2xl mt-auto mx-auto flex justify-center">
+        {/* The single existing naitik.png image - Revealed AFTER name slides up */}
+        <div
+          className={`relative w-full max-w-2xl mt-auto mx-auto flex justify-center transition-all duration-800 ease-out ${
+            showNaitikPhoto
+              ? 'opacity-100 scale-100 translate-y-0'
+              : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
+          }`}
+        >
           <Image
             src="/naitik.png"
             alt="Naitik Chattaraj"
@@ -113,7 +280,7 @@ export default function Hero() {
 
       <div
         ref={textRevealWrapperRef}
-        className="absolute inset-0 z-20 flex items-center justify-center w-full"
+        className="absolute inset-0 z-20 flex items-center justify-center w-full opacity-0 pointer-events-none"
       >
         <TextReveal ref={textRevealHandleRef} />
       </div>
