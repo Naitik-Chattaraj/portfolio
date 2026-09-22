@@ -186,7 +186,7 @@ export default function Hero() {
 
       {/* Top Progress Bar inside container */}
       <div
-        className={`absolute top-6 left-1/2 -translate-x-1/2 z-30 w-full max-w-xl px-6 flex items-center gap-3 transition-opacity duration-500 ease-out ${
+        className={`absolute top-10 md:top-12 left-1/2 -translate-x-1/2 z-30 w-full max-w-3xl md:max-w-4xl px-6 flex items-center gap-3 transition-opacity duration-500 ease-out ${
           showProgressBar ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
