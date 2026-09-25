@@ -133,6 +133,15 @@ export default function ScrollSnapper() {
       });
     };
 
+    // Cancel snapping animation immediately if user touches or wheels
+    const interruptSnap = () => {
+      if (isAnimatingRef.current) {
+        gsap.killTweensOf(window);
+        isAnimatingRef.current = false;
+        document.documentElement.style.scrollBehavior = 'auto';
+      }
+    };
+
     // Settle snap back if offset after scrolling stops (gentle drift back to nearby sections)
     const onScroll = () => {
       if (isAnimatingRef.current) return;
@@ -148,7 +157,6 @@ export default function ScrollSnapper() {
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
 
         // Check if we are near the absolute bottom (Contact section)
-        // Snapping is forced to lock at the last section to align it perfectly.
         const isNearBottom = (maxScroll - currentScroll) < 180;
         const closestIdx = getClosestIndex(currentScroll);
         const closestPoint = snapPoints[closestIdx];
@@ -160,7 +168,7 @@ export default function ScrollSnapper() {
 
         // For other sections, only drift snap if we are already very close (within 70px)
         // to a snap boundary, keeping normal scrolling feeling free and unrestrained.
-        if (Math.abs(currentScroll - closestPoint) > 10 && Math.abs(currentScroll - closestPoint) < 70) {
+        if (Math.abs(currentScroll - closestPoint) > 15 && Math.abs(currentScroll - closestPoint) < 70) {
           snapToPoint(closestPoint);
         }
       }, SETTLE_DELAY);
@@ -170,6 +178,8 @@ export default function ScrollSnapper() {
     const timer = setTimeout(() => {
       updateSnapPoints();
       window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('wheel', interruptSnap, { passive: true });
+      window.addEventListener('touchstart', interruptSnap, { passive: true });
       window.addEventListener('resize', updateSnapPoints, { passive: true });
     }, 800);
 
@@ -179,6 +189,8 @@ export default function ScrollSnapper() {
         clearTimeout(settleTimeoutRef.current);
       }
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('wheel', interruptSnap);
+      window.removeEventListener('touchstart', interruptSnap);
       window.removeEventListener('resize', updateSnapPoints);
     };
   }, []);

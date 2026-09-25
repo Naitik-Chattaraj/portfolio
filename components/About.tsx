@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 
 const CELL_SIZE = 64; // px, matches 4rem grid
 const BASE_COLOR = { r: 0x40, g: 0x40, b: 0x38 }; // dim resting color
@@ -15,11 +15,14 @@ export default function About() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const textCoordsRef = useRef<{ x: number; y: number }[]>([]);
+  const right001Ref = useRef<HTMLSpanElement>(null);
+  const paragraphRef = useRef<HTMLParagraphElement>(null);
   const mouseRef = useRef({ x: -9999, y: -9999 });
   const rafRef = useRef<number | undefined>(undefined);
   const startTimeRef = useRef<number>(0);
+  const [topPadPx, setTopPadPx] = useState<number>(128);
 
-  // Build the grid and calculate initial text coordinates
+  // Build the grid and calculate initial text coordinates & grid-snapped top padding
   const buildGrid = useCallback(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -37,6 +40,17 @@ export default function About() {
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.scale(dpr, dpr);
+    }
+
+    // Grid-snapped vertical centering: calculate top empty rows so text is centered on the page
+    const paragraph = paragraphRef.current;
+    if (paragraph && height) {
+      const totalRows = Math.floor(height / CELL_SIZE);
+      const pHeight = paragraph.offsetHeight;
+      const pRows = Math.ceil(pHeight / CELL_SIZE);
+      const availableRows = Math.max(0, totalRows - 1 - pRows);
+      const topEmptyRows = Math.max(1, Math.floor(availableRows / 2));
+      setTopPadPx(topEmptyRows * CELL_SIZE);
     }
     
     // Update text coordinates for hover effects
@@ -132,6 +146,23 @@ export default function About() {
         ctx.fillRect(-CELL_SIZE / 2, -CELL_SIZE / 2, CELL_SIZE, CELL_SIZE);
         ctx.restore();
       }
+    }
+
+    // --- Dynamic color change for top-right 001 when wave hits it ---
+    if (right001Ref.current && cols > 0) {
+      const rightCol = cols - 1;
+      const colFactor = 1.0;
+      const wavePosRight = (Math.sin(t * waveSpeed + rightCol * 0.5) * 0.5 + 0.5) * (rows - 1);
+      const rowDist = Math.abs(0 - wavePosRight); // row 0 is top row where header 001 lives
+      const falloff = Math.max(0, 1 - rowDist / waveWidth);
+      const rightWaveStrength = falloff * colFactor;
+
+      // When wave peak reaches row 0, rightWaveStrength is high (~0.7 to 1.0)
+      const factor = Math.min(1, Math.max(0, (rightWaveStrength - 0.1) / 0.65));
+      const r = Math.round(lerp(0xd6, 0, factor));
+      const g = Math.round(lerp(0xd6, 0, factor));
+      const b = Math.round(lerp(0xb1, 0, factor));
+      right001Ref.current.style.color = `rgb(${r}, ${g}, ${b})`;
     }
 
     // --- Text Letters Animation ---
@@ -260,16 +291,22 @@ export default function About() {
       {/* Interactive cells: mouse pull/highlight + ambient right-edge wave via Canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />
 
-      {/* Header */}
-      <div className="relative z-10 flex justify-between items-center px-8 py-6 border-b border-[#D6D6B1]/20 text-2xl md:text-3xl font-mono tracking-widest pointer-events-none">
+      {/* Header: h-16 (64px / 4rem = exactly 1 grid row), border-b removed */}
+      <div className="relative z-10 flex justify-between items-center px-8 md:px-16 h-16 text-2xl md:text-3xl font-mono tracking-widest pointer-events-none">
         <span>001</span>
         <span>ABOUT ME</span>
-        <span>001</span>
+        <span ref={right001Ref} className="transition-colors duration-100">001</span>
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex-1 flex items-center px-8 md:px-16 lg:px-24 py-24 pointer-events-none">
-        <p className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-tight leading-tight max-w-5xl pointer-events-auto">
+      {/* Content: original font size (text-3xl md:text-5xl lg:text-6xl) with grid-snapped vertical centering, left aligned, and sitting on horizontal grid lines */}
+      <div
+        className="relative z-10 flex-1 flex items-start px-8 md:px-16 lg:px-16 pb-24 pointer-events-none"
+        style={{ paddingTop: `${topPadPx}px` }}
+      >
+        <p
+          ref={paragraphRef}
+          className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-tight leading-[4rem] max-w-5xl translate-y-[14px] pointer-events-auto"
+        >
           {renderText()}
         </p>
       </div>

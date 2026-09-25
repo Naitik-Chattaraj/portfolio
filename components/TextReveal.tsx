@@ -45,7 +45,7 @@ const TextReveal = forwardRef<TextRevealHandle>((_, ref) => {
         {text.split(' ').map((word, i) => (
           <span key={i} className="word inline-block mr-[0.3em]">
             {word.split('').map((char, j) => (
-              <span key={j} className="char inline-block opacity-20">
+              <span key={j} className="char inline-block opacity-0">
                 {char}
               </span>
             ))}
