@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import Link from 'next/link';
 import { Footprints, Snowflake, TreePine, Droplets, Sun, type LucideIcon } from 'lucide-react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 // ── AutoplayVideo ────────────────────────────────────────────────────────────
 /**
@@ -108,21 +112,91 @@ const options: ProjectOption[] = [
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function Projects() {
   const [activeId, setActiveId] = useState(1);
-  // true once the projects section scrolls into view
   const [sectionVisible, setSectionVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const textRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
-  // Observe the section entering / leaving the viewport
+  // Observe the section entering / leaving the viewport for video autoplay
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => setSectionVisible(entry.isIntersecting),
-      { threshold: 0.2 } // start when 20 % of the section is visible
+      { threshold: 0.2 }
     );
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // Blur-in entrance animation for heading text when entering section
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const chars = textRefs.current.filter(Boolean);
+      if (!chars.length) return;
+
+      gsap.fromTo(
+        chars,
+        { opacity: 0, filter: "blur(12px)", y: 10 },
+        {
+          opacity: 1,
+          filter: "blur(0px)",
+          y: 0,
+          stagger: 0.015,
+          duration: 0.8,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 75%",
+            toggleActions: "play none none none",
+          },
+          onComplete: () => {
+            gsap.set(chars, { clearProps: "filter,y" });
+          },
+        }
+      );
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  const segments = [
+    { text: "Some Ideas brought to life ", highlight: false },
+    { text: "through code.", highlight: true }
+  ];
+
+  const renderText = () => {
+    let charIndex = 0;
+    return segments.map((seg, sIdx) => {
+      const words = seg.text.split(/(\s+)/);
+      return (
+        <span key={sIdx} className={seg.highlight ? "text-[var(--color-primary)]" : ""}>
+          {words.map((word, wIdx) => {
+            if (word.match(/^\s+$/)) {
+              return <span key={wIdx}>{word}</span>;
+            }
+            return (
+              <span key={wIdx} className="inline-block whitespace-pre">
+                {word.split('').map((char) => {
+                  const idx = charIndex++;
+                  return (
+                    <span
+                      key={idx}
+                      className="inline-block will-change-[filter,opacity,transform] opacity-0"
+                      ref={(el) => {
+                        textRefs.current[idx] = el;
+                      }}
+                    >
+                      {char}
+                    </span>
+                  );
+                })}
+              </span>
+            );
+          })}
+        </span>
+      );
+    });
+  };
 
   return (
     <div
@@ -130,7 +204,9 @@ export default function Projects() {
       ref={sectionRef}
       className="relative w-full min-h-[calc(100vh-0.5rem)] md:min-h-[calc(100vh-0.5rem)] lg:min-h-[calc(100vh-1rem)] rounded-[38px] overflow-hidden flex flex-col bg-[var(--color-card-bg)] shadow-2xl mt-4 px-6 py-12 md:px-12 md:py-20 "
     >
-      <div className="absolute inset-0 bg-noise pointer-events-none mix-blend-multiply opacity-50 z-0 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.6)_100%)]"></div>
+      {/* Background Noise & Vignette Layers */}
+      <div className="absolute inset-0 bg-noise pointer-events-none mix-blend-multiply opacity-50 z-0" />
+      <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-40 z-0 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.6)_100%)]" />
 
       <div className="relative z-10 w-full flex flex-col items-center h-full flex-grow">
         <div className="flex w-full justify-between items-center text-2xl md:text-3xl font-mono mb-16 md:mb-24 uppercase tracking-widest text-[#232223]">
@@ -140,7 +216,7 @@ export default function Projects() {
         </div>
 
         <h2 className="text-3xl md:text-5xl lg:text-[4rem] font-medium tracking-tight text-center mb-12 md:mb-20 text-[#232223]">
-          Some Ideas brought to life <span className="text-[var(--color-primary)]">through code.</span>
+          {renderText()}
         </h2>
 
         {/* Accordion Container */}

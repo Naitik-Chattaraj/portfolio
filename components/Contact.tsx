@@ -12,6 +12,7 @@ export default function Contact() {
   const headerRef = useRef<HTMLDivElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const textRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [sending, setSending] = useState(false);
@@ -19,34 +20,92 @@ export default function Contact() {
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
+      const chars = textRefs.current.filter(Boolean);
+
       gsap.fromTo(
         headerRef.current,
         { opacity: 0, y: -20 },
         {
           opacity: 1, y: 0, duration: 0.7, ease: 'power2.out',
-          scrollTrigger: { trigger: sectionRef.current, start: 'top 85%', once: true },
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 85%', toggleActions: 'play none none none' },
         }
       );
-      gsap.fromTo(
-        copyRef.current,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1, y: 0, duration: 0.8, ease: 'power2.out', delay: 0.1,
-          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%', once: true },
-        }
-      );
+
+      if (chars.length) {
+        gsap.fromTo(
+          chars,
+          { opacity: 0, filter: "blur(12px)", y: 10 },
+          {
+            opacity: 1,
+            filter: "blur(0px)",
+            y: 0,
+            stagger: 0.008,
+            duration: 0.7,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: "top 75%",
+              toggleActions: "play none none none",
+            },
+            onComplete: () => {
+              gsap.set(chars, { clearProps: "filter,y" });
+            },
+          }
+        );
+      }
+
       gsap.fromTo(
         cardRef.current,
         { opacity: 0, y: 50, scale: 0.97 },
         {
           opacity: 1, y: 0, scale: 1, duration: 0.9, ease: 'power2.out', delay: 0.2,
-          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%', once: true },
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 75%', toggleActions: 'play none none none' },
         }
       );
     }, sectionRef);
 
     return () => ctx.revert();
   }, []);
+
+  const segments = [
+    { text: "Whether you have an idea waiting to be built, a challenging problem to solve, or simply want to connect, I'd love to hear from you. ", highlight: false },
+    { text: "Great products begin with great conversations", highlight: true },
+    { text: "—and this might be the start of one.", highlight: false }
+  ];
+
+  const renderText = () => {
+    let charIndex = 0;
+    return segments.map((seg, sIdx) => {
+      const words = seg.text.split(/(\s+)/);
+      return (
+        <span key={sIdx} className={seg.highlight ? "text-[#AA6060]" : ""}>
+          {words.map((word, wIdx) => {
+            if (word.match(/^\s+$/)) {
+              return <span key={wIdx}>{word}</span>;
+            }
+            return (
+              <span key={wIdx} className="inline-block whitespace-pre">
+                {word.split('').map((char) => {
+                  const idx = charIndex++;
+                  return (
+                    <span
+                      key={idx}
+                      className="inline-block will-change-[filter,opacity,transform] opacity-0"
+                      ref={(el) => {
+                        textRefs.current[idx] = el;
+                      }}
+                    >
+                      {char}
+                    </span>
+                  );
+                })}
+              </span>
+            );
+          })}
+        </span>
+      );
+    });
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -73,8 +132,9 @@ export default function Contact() {
       ref={sectionRef}
       className="relative w-full min-h-[calc(100vh-0.5rem)] md:min-h-[calc(100vh-0.5rem)] lg:min-h-[calc(100vh-1rem)] rounded-[38px] overflow-hidden flex flex-col bg-[#D6D6B1] shadow-2xl mt-4"
     >
-      <div className="absolute inset-0 bg-noise pointer-events-none mix-blend-soft-light opacity-30 z-0" />
-      <div className="absolute inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.45)_100%)]" />
+      {/* Background Noise & Vignette Layers */}
+      <div className="absolute inset-0 bg-noise pointer-events-none mix-blend-multiply opacity-50 z-0" />
+      <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-40 z-0 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.6)_100%)]" />
 
       <div
         ref={headerRef}
@@ -87,14 +147,9 @@ export default function Contact() {
 
       <div className="relative z-10 flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 px-8 md:px-16 py-16">
 
-        <div ref={copyRef} className="flex-1 max-w-xl opacity-0">
+        <div ref={copyRef} className="flex-1 max-w-xl">
           <p className="text-[#3F3F37] text-3xl md:text-4xl lg:text-5xl font-medium leading-tight tracking-tight">
-            Whether you have an idea waiting to be built, a challenging problem to
-            solve, or simply want to connect, I&apos;d love to hear from you.{' '}
-            <span className="text-[#AA6060]">
-              Great products begin with great conversations
-            </span>
-            —and this might be the start of one.
+            {renderText()}
           </p>
 
           <div className="mt-10 flex gap-4">

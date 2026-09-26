@@ -24,9 +24,28 @@ export default function Hero() {
   const [progress, setProgress] = useState(0);
   const [animStage, setAnimStage] = useState<
     'loading' | 'bar_fade' | 'name_slide' | 'photo_reveal' | 'completed'
-  >('loading');
+  >(() => {
+    if (typeof window !== 'undefined') {
+      if ((window as any).__HAS_LOADED__ || sessionStorage.getItem('portfolio_loaded')) {
+        return 'completed';
+      }
+    }
+    return 'loading';
+  });
 
   useEffect(() => {
+    const isLoading = animStage !== 'completed';
+    (window as any).__HERO_IS_LOADING = isLoading;
+    window.dispatchEvent(new CustomEvent('hero-loading-state', { detail: { isLoading } }));
+  }, [animStage]);
+
+  useEffect(() => {
+    if (animStage === 'completed') {
+      (window as any).__HAS_LOADED__ = true;
+      try { sessionStorage.setItem('portfolio_loaded', 'true'); } catch (e) {}
+      return;
+    }
+
     // Disable body scroll while loading
     document.body.style.overflow = 'hidden';
 
@@ -70,6 +89,8 @@ export default function Hero() {
                 // Step 4: Loading sequence completed, unlock body scroll & sort/refresh ScrollTrigger
                 setTimeout(() => {
                   setAnimStage('completed');
+                  (window as any).__HAS_LOADED__ = true;
+                  try { sessionStorage.setItem('portfolio_loaded', 'true'); } catch (e) {}
                   document.body.style.overflow = '';
                   ScrollTrigger.sort();
                   ScrollTrigger.refresh();
@@ -232,7 +253,9 @@ export default function Hero() {
       ref={containerRef}
       className="relative w-full min-h-[calc(100vh-0.5rem)] md:min-h-[calc(100vh-0.5rem)] lg:min-h-[calc(100vh-1rem)] rounded-[38px] overflow-hidden flex flex-col bg-[var(--color-card-bg)] shadow-2xl"
     >
-      <div className="absolute inset-0 bg-noise pointer-events-none mix-blend-multiply opacity-50 z-0 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.6)_100%)]"></div>
+      {/* Background Noise & Vignette Layers */}
+      <div className="absolute inset-0 bg-noise pointer-events-none mix-blend-multiply opacity-50 z-0" />
+      <div className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-40 z-0 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.6)_100%)]" />
 
       {/* Top Progress Bar inside container */}
       <div

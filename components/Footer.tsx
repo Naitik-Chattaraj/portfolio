@@ -619,13 +619,13 @@ export default function Footer() {
             ref={madeWithLoveRef}
             onMouseEnter={handleMadeWithLoveMouseEnter}
             onMouseLeave={handleMadeWithLoveMouseLeave}
-            className="text-6xl sm:text-7xl md:text-8xl lg:text-[6vw] text-[#F4EADF] font-normal tracking-tight filter blur-[1.2px] select-none opacity-90 leading-none mb-2 md:mb-4 cursor-pointer inline-block"
+            className="text-6xl sm:text-7xl md:text-8xl lg:text-[6vw] text-[#F4EADF] font-normal tracking-tight filter blur-[2px] select-none opacity-90 leading-none mb-2 md:mb-4 cursor-pointer inline-block"
           >
             Made with ♡
           </span>
 
           {/* ©'26 */}
-          <span className="text-6xl sm:text-7xl md:text-8xl lg:text-[10vw] text-[#252523] font-bold tracking-tight filter blur-[1.2px] select-none opacity-90 leading-none mb-2 md:mb-4">
+          <span className="text-6xl sm:text-7xl md:text-8xl lg:text-[10vw] text-[#252523] font-bold tracking-tight filter blur-[2px] select-none opacity-90 leading-none mb-2 md:mb-4">
             ©&apos;26
           </span>
         </div>

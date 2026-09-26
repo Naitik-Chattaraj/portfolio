@@ -38,24 +38,25 @@ const Skills = () => {
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top top",
-          end: "+=300%",
-          scrub: 1,
+          end: "+=180%",
+          scrub: 0.8,
           pin: pinRef.current,
           invalidateOnRefresh: true,
           refreshPriority: 5,
         },
       });
 
-      tl.fromTo(activeChars,
-        { opacity: 0 },
-        { opacity: 1, stagger: 0.05, duration: 2, ease: "none" }
+      tl.fromTo(
+        activeChars,
+        { opacity: 0, filter: "blur(12px)", y: 10 },
+        { opacity: 1, filter: "blur(0px)", y: 0, stagger: 0.02, duration: 1, ease: "power1.out" }
       )
-        .to(textRef.current, { opacity: 1, duration: 0.5 })
-        .to(textRef.current, { opacity: 0, duration: 1 })
-        .fromTo(chartRef.current,
-          { autoAlpha: 0, scale: 0.8, pointerEvents: 'none' },
-          { autoAlpha: 1, scale: 1, pointerEvents: 'auto', duration: 1.5 },
-          "-=0.5"
+        .to(textRef.current, { opacity: 0, filter: "blur(16px)", scale: 0.95, duration: 0.6 }, "+=0.2")
+        .fromTo(
+          chartRef.current,
+          { autoAlpha: 0, scale: 0.85, filter: "blur(10px)", pointerEvents: 'none' },
+          { autoAlpha: 1, scale: 1, filter: "blur(0px)", pointerEvents: 'auto', duration: 1 },
+          "-=0.4"
         );
 
     }, containerRef);
@@ -204,7 +205,7 @@ const Skills = () => {
               ref={(el) => {
                 charRefs.current[idx] = el;
               }}
-              className="opacity-0 inline-block"
+              className="opacity-0 inline-block will-change-[filter,opacity,transform]"
             >
               {char === " " ? "\u00A0" : char}
             </span>

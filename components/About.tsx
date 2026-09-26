@@ -1,6 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useLayoutEffect } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const CELL_SIZE = 64; // px, matches 4rem grid
 const BASE_COLOR = { r: 0x40, g: 0x40, b: 0x38 }; // dim resting color
@@ -21,6 +25,37 @@ export default function About() {
   const rafRef = useRef<number | undefined>(undefined);
   const startTimeRef = useRef<number>(0);
   const [topPadPx, setTopPadPx] = useState<number>(128);
+
+  // Trigger character blur animation as soon as user enters the About Me section
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const chars = textRefs.current.filter(Boolean);
+      if (!chars.length) return;
+
+      gsap.fromTo(
+        chars,
+        { opacity: 0, filter: "blur(12px)", y: 10 },
+        {
+          opacity: 1,
+          filter: "blur(0px)",
+          y: 0,
+          stagger: 0.012,
+          duration: 0.8,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: "top 75%",
+            toggleActions: "play none none none",
+          },
+          onComplete: () => {
+            gsap.set(chars, { clearProps: "filter,y" });
+          },
+        }
+      );
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
 
   // Build the grid and calculate initial text coordinates & grid-snapped top padding
   const buildGrid = useCallback(() => {
@@ -252,7 +287,7 @@ export default function About() {
                   return (
                     <span
                       key={idx}
-                      className="inline-block transition-transform duration-75 will-change-transform"
+                      className="inline-block transition-transform duration-75 will-change-transform opacity-0"
                       style={{ transition: 'transform 0.1s ease-out, color 0.3s ease' }}
                       ref={(el) => {
                         textRefs.current[idx] = el;

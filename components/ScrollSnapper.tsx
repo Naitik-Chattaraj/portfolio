@@ -3,12 +3,10 @@
 /**
  * ScrollSnapper
  *
- * Requirements:
- * 1. Allow normal scrolling for the rest of the website (smooth scrolling).
- * 2. Do not hijack wheel/touch events on the body globally.
- * 3. Only apply settling/locking behaviour at the very end of the scroll
- *    (the Contact section at the bottom) or when settling in general,
- *    and ensure the first section (Hero) doesn't get skipped or scrolled all at once.
+ * Provides smooth snap-to-section settling when scrolling stops across all portfolio sections:
+ * Hero, About, Projects, Skills, Contact, and Footer.
+ *
+ * Avoids interfering with active scrolling or inside GSAP pinned animations.
  */
 
 import { useEffect, useRef } from 'react';
@@ -18,8 +16,8 @@ import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
-const SECTION_IDS = ['hero', 'about', 'projects', 'skills', 'contact'];
-const SETTLE_DELAY = 300; // ms to wait after scroll stops before settling
+const SECTION_IDS = ['hero', 'about', 'projects', 'skills', 'contact', 'footer'];
+const SETTLE_DELAY = 180; // ms to wait after scroll stops before settling
 
 export default function ScrollSnapper() {
   const isAnimatingRef = useRef(false);
@@ -30,70 +28,49 @@ export default function ScrollSnapper() {
 
     // Compute dynamically center-aligned snap points for all sections
     const updateSnapPoints = () => {
-      ScrollTrigger.refresh();
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      const points: number[] = [];
+      if (maxScroll <= 0) return;
 
-      SECTION_IDS.forEach((id, idx) => {
+      const points: number[] = [0];
+
+      SECTION_IDS.forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
 
-        const rawTop = getOffsetTop(el);
-        if (idx === 0) {
-          points.push(0);
-        } else {
-          // Query the exact, fresh DOM height of the element
-          const elHeight = el.getBoundingClientRect().height || el.offsetHeight;
-          const viewportHeight = window.innerHeight;
+        const rect = el.getBoundingClientRect();
+        const rawTop = rect.top + window.scrollY;
+        const elHeight = rect.height || el.offsetHeight;
+        const viewportHeight = window.innerHeight;
 
-          // Center the section if it is smaller than viewport. Otherwise, snap to its top.
-          let centeredScroll = rawTop;
-          if (elHeight < viewportHeight) {
-            centeredScroll = rawTop - (viewportHeight - elHeight) / 2;
-          }
-          points.push(Math.max(0, Math.min(centeredScroll, maxScroll)));
+        let targetScroll = rawTop;
+        // Center the section if it is smaller than or equal to viewport height
+        if (elHeight <= viewportHeight + 30) {
+          targetScroll = rawTop - Math.max(0, (viewportHeight - elHeight) / 2);
+        }
+
+        points.push(Math.max(0, Math.min(targetScroll, maxScroll)));
+      });
+
+      // Include end points of GSAP pinned triggers (transitions out of pinned sections)
+      const triggers = ScrollTrigger.getAll();
+      triggers.forEach((st) => {
+        if (st.pin && st.end) {
+          points.push(Math.max(0, Math.min(st.end, maxScroll)));
         }
       });
 
-      // Add ends of GSAP pinned sections if necessary to navigate out of them
-      SECTION_IDS.forEach((id) => {
-        if (id === 'hero') return; // Skip hero end snap point so it scrolls naturally
-        const triggers = ScrollTrigger.getAll();
-        const pinTrigger = triggers.find(st => st.trigger?.id === id && st.pin);
-        if (pinTrigger) {
-          const rawEnd = pinTrigger.end;
-          const el = document.getElementById(id);
-          if (el) {
-            const elHeight = el.getBoundingClientRect().height || el.offsetHeight;
-            const viewportHeight = window.innerHeight;
-            let centeredEnd = rawEnd;
-            if (elHeight < viewportHeight) {
-              centeredEnd = rawEnd - (viewportHeight - elHeight) / 2;
-            }
-            points.push(Math.max(0, Math.min(centeredEnd, maxScroll)));
-          } else {
-            points.push(Math.min(rawEnd, maxScroll));
-          }
-        }
-      });
+      // Always include absolute bottom
+      points.push(maxScroll);
 
-      snapPoints = [...new Set(points)].sort((a, b) => a - b);
-    };
-
-    const getOffsetTop = (el: HTMLElement): number => {
-      let top = 0;
-      let node: HTMLElement | null = el;
-      while (node) {
-        top += node.offsetTop;
-        node = node.offsetParent as HTMLElement | null;
-      }
-      return top;
+      snapPoints = Array.from(new Set(points.map((p) => Math.round(p)))).sort((a, b) => a - b);
     };
 
     const getActivePinTrigger = () => {
       const currentScroll = window.scrollY;
       const triggers = ScrollTrigger.getAll();
-      return triggers.find(st => st.pin && currentScroll >= st.start && currentScroll < st.end - 5);
+      return triggers.find(
+        (st) => st.pin && currentScroll >= st.start + 10 && currentScroll < st.end - 10
+      );
     };
 
     const isInsidePinnedSection = () => {
@@ -123,13 +100,13 @@ export default function ScrollSnapper() {
 
       gsap.to(window, {
         scrollTo: { y: point, autoKill: false },
-        duration: 0.8,
+        duration: 0.7,
         ease: 'power3.out',
         overwrite: 'auto',
         onComplete: () => {
           isAnimatingRef.current = false;
           html.style.scrollBehavior = originalScrollBehavior;
-        }
+        },
       });
     };
 
@@ -142,7 +119,28 @@ export default function ScrollSnapper() {
       }
     };
 
-    // Settle snap back if offset after scrolling stops (gentle drift back to nearby sections)
+    const checkAndSnap = () => {
+      if (isInsidePinnedSection() || isAnimatingRef.current) return;
+
+      const currentScroll = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+      // Check if near absolute bottom
+      if (maxScroll - currentScroll < 120) {
+        if (Math.abs(currentScroll - maxScroll) > 10) {
+          snapToPoint(maxScroll);
+        }
+        return;
+      }
+
+      const closestIdx = getClosestIndex(currentScroll);
+      const closestPoint = snapPoints[closestIdx];
+
+      if (Math.abs(currentScroll - closestPoint) > 10) {
+        snapToPoint(closestPoint);
+      }
+    };
+
     const onScroll = () => {
       if (isAnimatingRef.current) return;
 
@@ -150,45 +148,30 @@ export default function ScrollSnapper() {
         clearTimeout(settleTimeoutRef.current);
       }
 
-      settleTimeoutRef.current = setTimeout(() => {
-        if (isInsidePinnedSection() || isAnimatingRef.current) return;
-
-        const currentScroll = window.scrollY;
-        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-
-        // Check if we are near the absolute bottom (Contact section)
-        const isNearBottom = (maxScroll - currentScroll) < 180;
-        const closestIdx = getClosestIndex(currentScroll);
-        const closestPoint = snapPoints[closestIdx];
-
-        if (isNearBottom) {
-          snapToPoint(maxScroll);
-          return;
-        }
-
-        // For other sections, only drift snap if we are already very close (within 70px)
-        // to a snap boundary, keeping normal scrolling feeling free and unrestrained.
-        if (Math.abs(currentScroll - closestPoint) > 15 && Math.abs(currentScroll - closestPoint) < 70) {
-          snapToPoint(closestPoint);
-        }
-      }, SETTLE_DELAY);
+      settleTimeoutRef.current = setTimeout(checkAndSnap, SETTLE_DELAY);
     };
 
     // Initial setup
-    const timer = setTimeout(() => {
-      updateSnapPoints();
-      window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('wheel', interruptSnap, { passive: true });
-      window.addEventListener('touchstart', interruptSnap, { passive: true });
-      window.addEventListener('resize', updateSnapPoints, { passive: true });
-    }, 800);
+    updateSnapPoints();
+    const timer = setTimeout(updateSnapPoints, 500);
+
+    // Keep snapPoints updated when GSAP triggers or window refresh
+    ScrollTrigger.addEventListener('refresh', updateSnapPoints);
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scrollend', checkAndSnap, { passive: true });
+    window.addEventListener('wheel', interruptSnap, { passive: true });
+    window.addEventListener('touchstart', interruptSnap, { passive: true });
+    window.addEventListener('resize', updateSnapPoints, { passive: true });
 
     return () => {
       clearTimeout(timer);
       if (settleTimeoutRef.current) {
         clearTimeout(settleTimeoutRef.current);
       }
+      ScrollTrigger.removeEventListener('refresh', updateSnapPoints);
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scrollend', checkAndSnap);
       window.removeEventListener('wheel', interruptSnap);
       window.removeEventListener('touchstart', interruptSnap);
       window.removeEventListener('resize', updateSnapPoints);

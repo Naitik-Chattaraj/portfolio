@@ -5,10 +5,38 @@ import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
   // State for the section being viewed (left pill)
-  const [activeSection, setActiveSection] = useState('Hero');
+  const [activeSection, setActiveSection] = useState('Home');
   const [footerVisible, setFooterVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (pathname !== '/') {
+      setIsLoading(false);
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      if ((window as any).__HAS_LOADED__ || sessionStorage.getItem('portfolio_loaded')) {
+        setIsLoading(false);
+        return;
+      }
+      if (typeof (window as any).__HERO_IS_LOADING === 'boolean') {
+        setIsLoading((window as any).__HERO_IS_LOADING);
+      } else {
+        setIsLoading(true);
+      }
+    }
+
+    const handleLoadingState = (e: Event) => {
+      const customEvt = e as CustomEvent<{ isLoading: boolean }>;
+      setIsLoading(customEvt.detail.isLoading);
+    };
+
+    window.addEventListener('hero-loading-state', handleLoadingState);
+    return () => window.removeEventListener('hero-loading-state', handleLoadingState);
+  }, [pathname]);
 
   // Derive the active nav pill from the current URL only (not scroll position)
   const activePage = pathname.startsWith('/projects') ? 'Projects'
@@ -18,14 +46,14 @@ export default function Navbar() {
   useEffect(() => {
     const handleScroll = () => {
       const sections = ['hero', 'about', 'projects', 'skills', 'contact', 'footer'];
-      let currentSection = 'Hero';
+      let currentSection = 'Home';
 
       for (const section of sections) {
         const el = document.getElementById(section);
         if (el) {
           const rect = el.getBoundingClientRect();
           if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) {
-            currentSection = section.charAt(0).toUpperCase() + section.slice(1);
+            currentSection = section === 'hero' ? 'Home' : section.charAt(0).toUpperCase() + section.slice(1);
           }
         }
       }
@@ -70,7 +98,11 @@ export default function Navbar() {
         }}
       >
         <span className="text-xl font-medium">
-          {pathname.startsWith('/projects/') ? 'Projects' : activeSection}
+          {isLoading
+            ? 'Waking...'
+            : pathname.startsWith('/projects/')
+              ? 'Projects'
+              : activeSection}
         </span>
       </div>
 
@@ -87,9 +119,8 @@ export default function Navbar() {
           <Link
             key={item}
             href={item === 'Home' ? '/' : `/${item.toLowerCase()}`}
-            className={`relative z-10 px-6 py-2 rounded-full text-lg font-medium transition-colors duration-300 ${
-              activePage === item ? 'text-[#D6D6B1]' : 'text-gray-800 hover:text-black'
-            }`}
+            className={`relative z-10 px-6 py-2 rounded-full text-lg font-medium transition-colors duration-300 ${activePage === item ? 'text-[#D6D6B1]' : 'text-gray-800 hover:text-black'
+              }`}
             style={{ minWidth: PILL_W }}
           >
             {item}
