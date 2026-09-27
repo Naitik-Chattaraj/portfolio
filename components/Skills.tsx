@@ -76,6 +76,10 @@ const Skills = () => {
       type: 'packedbubble',
       height: '100%',
       backgroundColor: 'transparent',
+      spacingTop: 0,
+      spacingBottom: 45,
+      spacingLeft: 10,
+      spacingRight: 10,
     },
     title: {
       text: ''
@@ -87,7 +91,7 @@ const Skills = () => {
     plotOptions: {
       packedbubble: {
         minSize: '15%',
-        maxSize: '100%',
+        maxSize: '85%',
         layoutAlgorithm: {
           splitSeries: false,
           gravitationalConstant: 0.05
@@ -246,7 +250,7 @@ const Skills = () => {
               GSAP controls opacity/scale reveal on scroll. */}
           <div
             ref={chartRef}
-            className="w-[50%] h-full"
+            className="w-[90%] md:w-[70%] lg:w-[50%] h-full -translate-y-6"
           >
             <SkillsChart ref={chartComponentRef} options={chartOptions as any} />
           </div>

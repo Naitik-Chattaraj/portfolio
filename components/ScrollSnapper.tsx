@@ -16,7 +16,8 @@ import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
-const SECTION_IDS = ['hero', 'about', 'projects', 'skills', 'contact', 'footer'];
+const SECTION_IDS = ['hero', 'projects', 'contact', 'footer'];
+const EXCLUDED_SECTION_IDS = ['about', 'skills'];
 const SETTLE_DELAY = 180; // ms to wait after scroll stops before settling
 
 export default function ScrollSnapper() {
@@ -26,7 +27,7 @@ export default function ScrollSnapper() {
   useEffect(() => {
     let snapPoints: number[] = [];
 
-    // Compute dynamically center-aligned snap points for all sections
+    // Compute dynamically center-aligned snap points for allowed sections
     const updateSnapPoints = () => {
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
       if (maxScroll <= 0) return;
@@ -51,11 +52,19 @@ export default function ScrollSnapper() {
         points.push(Math.max(0, Math.min(targetScroll, maxScroll)));
       });
 
-      // Include end points of GSAP pinned triggers (transitions out of pinned sections)
+      // Include end points of GSAP pinned triggers for allowed sections
       const triggers = ScrollTrigger.getAll();
       triggers.forEach((st) => {
         if (st.pin && st.end) {
-          points.push(Math.max(0, Math.min(st.end, maxScroll)));
+          const pinEl = st.pin as HTMLElement;
+          const triggerEl = st.trigger as HTMLElement;
+          const isExcluded = EXCLUDED_SECTION_IDS.some((id) => {
+            const el = document.getElementById(id);
+            return el && (el === pinEl || el.contains(pinEl) || el === triggerEl || el.contains(triggerEl));
+          });
+          if (!isExcluded) {
+            points.push(Math.max(0, Math.min(st.end, maxScroll)));
+          }
         }
       });
 
@@ -75,6 +84,26 @@ export default function ScrollSnapper() {
 
     const isInsidePinnedSection = () => {
       return !!getActivePinTrigger();
+    };
+
+    const isInsideExcludedSection = () => {
+      const currentScroll = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      const viewCenter = currentScroll + viewportHeight / 2;
+
+      for (const id of EXCLUDED_SECTION_IDS) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+
+        const rect = el.getBoundingClientRect();
+        const sectionTop = rect.top + currentScroll;
+        const sectionBottom = sectionTop + (rect.height || el.offsetHeight);
+
+        if (viewCenter >= sectionTop - 50 && viewCenter <= sectionBottom + 50) {
+          return true;
+        }
+      }
+      return false;
     };
 
     const getClosestIndex = (scrollY: number) => {
@@ -120,7 +149,7 @@ export default function ScrollSnapper() {
     };
 
     const checkAndSnap = () => {
-      if (isInsidePinnedSection() || isAnimatingRef.current) return;
+      if (isInsidePinnedSection() || isInsideExcludedSection() || isAnimatingRef.current) return;
 
       const currentScroll = window.scrollY;
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;

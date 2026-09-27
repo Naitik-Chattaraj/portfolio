@@ -7,9 +7,29 @@ export default function Navbar() {
   // State for the section being viewed (left pill)
   const [activeSection, setActiveSection] = useState('Home');
   const [footerVisible, setFooterVisible] = useState(false);
+  const [heroExpanded, setHeroExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (pathname !== '/') {
+      setHeroExpanded(false);
+      return;
+    }
+
+    if (typeof window !== 'undefined' && (window as any).__HERO_IS_EXPANDED) {
+      setHeroExpanded(true);
+    }
+
+    const handleExpandState = (e: Event) => {
+      const customEvt = e as CustomEvent<{ isExpanded: boolean }>;
+      setHeroExpanded(customEvt.detail.isExpanded);
+    };
+
+    window.addEventListener('hero-expand-state', handleExpandState);
+    return () => window.removeEventListener('hero-expand-state', handleExpandState);
+  }, [pathname]);
 
   useEffect(() => {
     if (pathname !== '/') {
@@ -45,6 +65,10 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
+      if (window.scrollY === 0 && heroExpanded) {
+        setHeroExpanded(false);
+      }
+
       const sections = ['hero', 'about', 'projects', 'skills', 'contact', 'footer'];
       let currentSection = 'Home';
 
@@ -65,7 +89,7 @@ export default function Navbar() {
     handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [heroExpanded]);
 
   // Hide navbar when footer is visible
   useEffect(() => {
@@ -86,15 +110,17 @@ export default function Navbar() {
   const PILL_GAP = 5;
   const activeIdx = navItems.indexOf(activePage);
 
+  const navHidden = footerVisible || heroExpanded;
+
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-between items-end px-8 md:px-16 pb-4 pointer-events-none">
       {/* Left Pill */}
       <div
         className="bg-[#D6D6B1]/50 backdrop-blur-md rounded-full px-8 py-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] transition-all duration-500 ease-out"
         style={{
-          opacity: footerVisible ? 0 : 1,
-          pointerEvents: footerVisible ? 'none' : 'auto',
-          transform: footerVisible ? 'translateX(-40px)' : 'translateX(0)',
+          opacity: navHidden ? 0 : 1,
+          pointerEvents: navHidden ? 'none' : 'auto',
+          transform: navHidden ? 'translateX(-40px)' : 'translateX(0)',
         }}
       >
         <span className="text-xl font-medium">
@@ -110,9 +136,9 @@ export default function Navbar() {
       <div
         className="relative flex bg-[#D6D6B1]/50 backdrop-blur-md rounded-full p-1 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] transition-all duration-500 ease-out"
         style={{
-          opacity: footerVisible ? 0 : 1,
-          pointerEvents: footerVisible ? 'none' : 'auto',
-          transform: footerVisible ? 'translateX(40px)' : 'translateX(0)',
+          opacity: navHidden ? 0 : 1,
+          pointerEvents: navHidden ? 'none' : 'auto',
+          transform: navHidden ? 'translateX(40px)' : 'translateX(0)',
         }}
       >
         {navItems.map((item) => (

@@ -131,6 +131,12 @@ export default function Hero() {
           pinSpacing: true,
           refreshPriority: 10,
           onUpdate: (self) => {
+            const isExpanded = self.progress > 0.02 && self.progress < 0.92;
+            if ((window as any).__HERO_IS_EXPANDED !== isExpanded) {
+              (window as any).__HERO_IS_EXPANDED = isExpanded;
+              window.dispatchEvent(new CustomEvent('hero-expand-state', { detail: { isExpanded } }));
+            }
+
             // Text reveal starts at 0.1 (0.5s/5.0s) and ends at 0.82 (4.1s/5.0s)
             const p = gsap.utils.mapRange(0.1, 0.82, 0, 1, self.progress);
             if (p < 0 || p > 1) return;
@@ -161,6 +167,18 @@ export default function Hero() {
 
               gsap.set(char, { color, opacity, overwrite: true });
             });
+          },
+          onLeave: () => {
+            if ((window as any).__HERO_IS_EXPANDED) {
+              (window as any).__HERO_IS_EXPANDED = false;
+              window.dispatchEvent(new CustomEvent('hero-expand-state', { detail: { isExpanded: false } }));
+            }
+          },
+          onLeaveBack: () => {
+            if ((window as any).__HERO_IS_EXPANDED) {
+              (window as any).__HERO_IS_EXPANDED = false;
+              window.dispatchEvent(new CustomEvent('hero-expand-state', { detail: { isExpanded: false } }));
+            }
           },
         },
       });
