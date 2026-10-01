@@ -3,10 +3,11 @@
 /**
  * ScrollSnapper
  *
- * Provides smooth snap-to-section settling when scrolling stops across all portfolio sections:
- * Hero, About, Projects, Skills, Contact, and Footer.
+ * Provides smooth snap-to-section settling when scrolling stops across allowed portfolio sections:
+ * Projects and Contact.
  *
- * Avoids interfering with active scrolling or inside GSAP pinned animations.
+ * Avoids interfering with active scrolling, inside GSAP pinned animations,
+ * or within excluded sections (Hero, About, Skills, and Footer).
  */
 
 import { useEffect, useRef } from 'react';
@@ -16,8 +17,8 @@ import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
-const SECTION_IDS = ['hero', 'projects', 'contact', 'footer'];
-const EXCLUDED_SECTION_IDS = ['about', 'skills'];
+const SECTION_IDS = ['projects', 'contact'];
+const EXCLUDED_SECTION_IDS = ['hero', 'about', 'skills', 'footer'];
 const SETTLE_DELAY = 180; // ms to wait after scroll stops before settling
 
 export default function ScrollSnapper() {
@@ -32,7 +33,7 @@ export default function ScrollSnapper() {
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
       if (maxScroll <= 0) return;
 
-      const points: number[] = [0];
+      const points: number[] = [];
 
       SECTION_IDS.forEach((id) => {
         const el = document.getElementById(id);
@@ -68,9 +69,6 @@ export default function ScrollSnapper() {
         }
       });
 
-      // Always include absolute bottom
-      points.push(maxScroll);
-
       snapPoints = Array.from(new Set(points.map((p) => Math.round(p)))).sort((a, b) => a - b);
     };
 
@@ -89,16 +87,29 @@ export default function ScrollSnapper() {
     const isInsideExcludedSection = () => {
       const currentScroll = window.scrollY;
       const viewportHeight = window.innerHeight;
+      const maxScroll = document.documentElement.scrollHeight - viewportHeight;
       const viewCenter = currentScroll + viewportHeight / 2;
 
       for (const id of EXCLUDED_SECTION_IDS) {
         const el = document.getElementById(id);
         if (!el) continue;
 
-        const rect = el.getBoundingClientRect();
+        const targetEl = el.parentElement?.classList.contains('pin-spacer') ? el.parentElement : el;
+        const rect = targetEl.getBoundingClientRect();
         const sectionTop = rect.top + currentScroll;
-        const sectionBottom = sectionTop + (rect.height || el.offsetHeight);
+        const sectionBottom = sectionTop + (rect.height || (targetEl as HTMLElement).offsetHeight);
 
+        // Hero: any scroll position before the section ends
+        if (id === 'hero' && currentScroll <= sectionBottom - 50) {
+          return true;
+        }
+
+        // Footer: any scroll position once footer is in view or near bottom
+        if (id === 'footer' && (viewCenter >= sectionTop - 50 || currentScroll >= maxScroll - 50)) {
+          return true;
+        }
+
+        // General section center check
         if (viewCenter >= sectionTop - 50 && viewCenter <= sectionBottom + 50) {
           return true;
         }
@@ -150,22 +161,14 @@ export default function ScrollSnapper() {
 
     const checkAndSnap = () => {
       if (isInsidePinnedSection() || isInsideExcludedSection() || isAnimatingRef.current) return;
+      if (snapPoints.length === 0) return;
 
       const currentScroll = window.scrollY;
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-
-      // Check if near absolute bottom
-      if (maxScroll - currentScroll < 120) {
-        if (Math.abs(currentScroll - maxScroll) > 10) {
-          snapToPoint(maxScroll);
-        }
-        return;
-      }
 
       const closestIdx = getClosestIndex(currentScroll);
       const closestPoint = snapPoints[closestIdx];
 
-      if (Math.abs(currentScroll - closestPoint) > 10) {
+      if (closestPoint !== undefined && Math.abs(currentScroll - closestPoint) > 10) {
         snapToPoint(closestPoint);
       }
     };
