@@ -32,7 +32,6 @@ export default function ProjectsPageClient() {
   const gridWrapRef = useRef<HTMLDivElement>(null);
   const gridContentRef = useRef<HTMLDivElement>(null);
   const endLabelRef = useRef<HTMLDivElement>(null);
-  const nameRef = useRef<HTMLDivElement>(null);
 
   // ── Build canvas ─────────────────────────────────────────────────────────
   const buildCanvas = useCallback(() => {
@@ -133,10 +132,9 @@ export default function ProjectsPageClient() {
     const grid = gridWrapRef.current;
     const gridContent = gridContentRef.current;
     const endLabel = endLabelRef.current;
-    const name = nameRef.current;
     const hero = heroRef.current;
     const overlay = overlayCardRef.current;
-    if (!card || !label || !grid || !gridContent || !endLabel || !name || !hero || !overlay) return;
+    if (!card || !label || !grid || !gridContent || !endLabel || !hero || !overlay) return;
 
     // Measure card's position relative to heroRef
     const heroRect = hero.getBoundingClientRect();
@@ -206,8 +204,7 @@ export default function ProjectsPageClient() {
       transformOrigin: 'center top',
       ease: 'power2.inOut',
       duration: 0.15,
-    }, 0)
-    .to(name, { opacity: 0, y: 20, ease: 'power1.in', duration: 0.10 }, 0)
+    }, 0);
 
     // Phase 2 (0.15): grid fades in with staggered card entrance animation
     tl.to(grid, { opacity: 1, pointerEvents: 'auto', ease: 'power1.out', duration: 0.05 }, 0.15)
@@ -242,8 +239,7 @@ export default function ProjectsPageClient() {
       ease: 'power2.inOut',
       duration: 0.15,
     }, 0.85)
-    .to(endLabel, { opacity: 1, ease: 'power1.out', duration: 0.08 }, 0.90)
-    .to(name, { opacity: 1, y: 0, ease: 'power1.out', duration: 0.10 }, 0.90);
+    .to(endLabel, { opacity: 1, ease: 'power1.out', duration: 0.08 }, 0.90);
 
     const st = tl.scrollTrigger;
 
@@ -301,14 +297,22 @@ export default function ProjectsPageClient() {
   }, []);
 
   return (
-    // Normal cursor on page; grid region overrides to cursor:none via its own className
     <div
-      className="relative min-h-screen"
-      style={{ backgroundColor: 'var(--color-body-bg)' }}
+      className="relative min-h-screen cursor-none projects-grid-region"
+      style={{ backgroundColor: 'var(--color-body-bg)', cursor: 'none' }}
     >
+      <style>{`
+        .cursor-none,
+        .cursor-none *,
+        .projects-grid-region,
+        .projects-grid-region * {
+          cursor: none !important;
+        }
+      `}</style>
+
       {/* ── Static grid (matches 4rem cell size) ── */}
       <div
-        className="fixed inset-0 z-0 pointer-events-none"
+        className="fixed inset-0 z-0 pointer-events-none cursor-none"
         style={{
           backgroundImage: `
             linear-gradient(to right, #D6D6B1 1px, transparent 1px),
@@ -317,58 +321,44 @@ export default function ProjectsPageClient() {
           // 4rem = 64px matches CELL_SIZE — CSS grid and canvas stay in sync
           backgroundSize: '4rem 4rem',
           opacity: 0.22,
+          cursor: 'none',
         }}
       />
 
       {/* ── Interactive canvas (mouse hover highlights only) ── */}
       <canvas
         ref={canvasRef}
-        className="absolute top-0 left-0 z-0 pointer-events-none"
+        className="absolute top-0 left-0 z-0 pointer-events-none cursor-none"
+        style={{ cursor: 'none' }}
       />
 
       {/* ── Pinned hero section ── */}
       <div
         ref={heroRef}
-        className="relative z-10 min-h-screen w-full"
+        className="relative z-10 min-h-screen w-full cursor-none projects-grid-region"
+        style={{ cursor: 'none' }}
       >
         {/*
-          The hero layout: card + name pinned to the viewport.
-          Card is centered horizontally, name sits at the bottom — large, full-width.
+          The hero layout: Projects card centered in the viewport (both vertically and horizontally).
         */}
-        <div className="relative flex flex-col items-center justify-between min-h-screen py-6 md:py-8">
-
-          {/* Top spacer to push card down a bit from top of navbar area */}
-          <div className="flex-1 flex flex-col items-center justify-center w-full gap-0">
-
-            {/*
-              Invisible placeholder card — only for getBoundingClientRect measurement.
-              Sized noticeably larger to make a bold, prominent statement.
-              The animated overlay card visually replaces this.
-            */}
-            <div
-              ref={cardRef}
-              style={{
-                backgroundColor: 'var(--color-card-bg)',
-                borderRadius: '44px',
-                // Bigger card: 82% viewport width up to 1120px
-                width: 'min(82vw, 1120px)',
-                // Height: fills viewport while leaving room for the name
-                height: 'calc(100vh - 12rem)',
-                flexShrink: 0,
-              }}
-            />
-          </div>
-
-          {/* ── "Naitik Chattaraj" name ── pinned at the bottom, full-bleed ── */}
+        <div
+          className="relative flex items-center justify-center min-h-screen w-full px-4 md:px-8 cursor-none projects-grid-region"
+          style={{ cursor: 'none' }}
+        >
+          {/*
+            Invisible placeholder card — only for getBoundingClientRect measurement.
+            The animated overlay card visually replaces this.
+          */}
           <div
-            ref={nameRef}
-            className="w-full text-center pointer-events-none select-none px-2 pb-0"
-            style={{ lineHeight: 0.85 }}
-          >
-            <h1 className="text-primary font-bold tracking-tight text-6xl md:text-[9rem] lg:text-[10rem] leading-none whitespace-nowrap">
-              Naitik Chattaraj
-            </h1>
-          </div>
+            ref={cardRef}
+            style={{
+              backgroundColor: 'var(--color-card-bg)',
+              borderRadius: '44px',
+              width: 'min(84vw, 1150px)',
+              height: 'min(76vh, 620px)',
+              flexShrink: 0,
+            }}
+          />
         </div>
 
         {/*
@@ -377,7 +367,7 @@ export default function ProjectsPageClient() {
         */}
         <div
           ref={overlayCardRef}
-          className="overflow-hidden shadow-2xl flex items-center justify-center z-20"
+          className="overflow-hidden shadow-2xl flex items-center justify-center z-20 cursor-none projects-grid-region"
           style={{
             backgroundColor: 'var(--color-card-bg)',
             position: 'absolute',
@@ -385,6 +375,7 @@ export default function ProjectsPageClient() {
             width: '100%', height: '100%',
             borderRadius: '0px',
             opacity: 0, // GSAP immediately repositions + makes visible
+            cursor: 'none',
           }}
         >
           {/* Noise texture */}
@@ -399,18 +390,20 @@ export default function ProjectsPageClient() {
           {/* "PROJECTS" label — travels to top of stretched out card */}
           <div
             ref={labelRef}
-            className="absolute inset-x-0 z-30 flex items-center justify-center pointer-events-none select-none"
+            className="absolute inset-x-0 z-30 flex items-center justify-center pointer-events-none select-none cursor-none"
             style={{
               top: '50%',
               transform: 'translateY(-50%)',
+              cursor: 'none',
             }}
           >
             <span
-              className="font-bold uppercase text-[#3F3F37]"
+              className="font-bold uppercase text-[#3F3F37] cursor-none"
               style={{
                 fontSize: 'clamp(3.5rem, 8.5vw, 7.5rem)',
                 letterSpacing: '0.12em',
                 lineHeight: 1,
+                cursor: 'none',
               }}
             >
               PROJECTS
@@ -418,14 +411,16 @@ export default function ProjectsPageClient() {
           </div>
 
           {/* Project grid — hidden initially, shown fullscreen */}
-          {/* cursor-none: hides cursor while inside the grid region */}
+          {/* cursor-none: completely hides cursor in grid region and across all descendants */}
           <div
             ref={gridWrapRef}
-            className="absolute inset-0 z-20 overflow-hidden cursor-none"
+            className="absolute inset-0 z-20 overflow-hidden cursor-none projects-grid-region"
+            style={{ cursor: 'none' }}
           >
             <div
               ref={gridContentRef}
-              className="w-full max-w-7xl mx-auto px-4 md:px-8 pt-24 md:pt-32 pb-24 md:pb-32"
+              className="w-full max-w-7xl mx-auto px-4 md:px-8 pt-24 md:pt-32 pb-24 md:pb-32 cursor-none projects-grid-region"
+              style={{ cursor: 'none' }}
             >
               <ProjectsGrid />
             </div>

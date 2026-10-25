@@ -41,3 +41,11 @@ html, body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Ensure cursor-none and grid regions hide cursor on element AND all descendants */
+.cursor-none,
+.cursor-none *,
+.projects-grid-region,
+.projects-grid-region * {
+  cursor: none !important;
+}

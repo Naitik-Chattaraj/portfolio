@@ -38,7 +38,7 @@ function ProjectCard({ project }: { project: Project }) {
     <Link
       href={`/projects/${project.slug}`}
       onClick={handleClick}
-      className={`project-card group relative overflow-hidden no-underline flex flex-col justify-between transition-all duration-500
+      className={`project-card projects-grid-region cursor-none group relative overflow-hidden no-underline flex flex-col justify-between transition-all duration-500
         bg-[#2B2B25] border border-white/10 hover:border-white/25 hover:shadow-2xl hover:-translate-y-1
         ${isWide
           ? 'md:col-span-2 rounded-[32px] md:rounded-[38px] p-6 md:p-8 flex-col md:flex-row items-center gap-6 md:gap-8'
@@ -48,6 +48,7 @@ function ProjectCard({ project }: { project: Project }) {
       style={{
         borderRadius: isWide ? '36px' : '32px',
         WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+        cursor: 'none',
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -188,8 +189,8 @@ function ProjectCard({ project }: { project: Project }) {
 // ── Grid ──────────────────────────────────────────────────────────────────────
 export default function ProjectsGrid() {
   return (
-    <section className="w-full max-w-7xl mx-auto px-0">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-7">
+    <section className="w-full max-w-7xl mx-auto px-0 cursor-none projects-grid-region" style={{ cursor: 'none' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-7 cursor-none projects-grid-region" style={{ cursor: 'none' }}>
         {projects.map((project) => (
           <ProjectCard key={project.slug} project={project} />
         ))}
