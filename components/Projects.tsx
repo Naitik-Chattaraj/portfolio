@@ -48,66 +48,7 @@ function AutoplayVideo({
   );
 }
 
-// ── Data ─────────────────────────────────────────────────────────────────────
-interface ProjectOption {
-  id: number;
-  slug: string;
-  icon?: LucideIcon;
-  iconSrc?: string;
-  main: string;
-  sub: string;
-  bg?: string;
-  bgVideo?: string;
-  defaultBg: string;
-}
-
-const options: ProjectOption[] = [
-  {
-    id: 1,
-    slug: 'tech-club-website',
-    iconSrc: '/icons/tech-club.png',
-    main: 'Tech Club DPSRPK',
-    sub: 'The official website for the Tech Club of DPS Ruby Park, Kolkata',
-    bgVideo: '/video/tech-club.mp4',
-    defaultBg: '#e7f528ff'
-  },
-  {
-    id: 2,
-    slug: 'the-carcino-foundation-website',
-    iconSrc: '/icons/carcino.png',
-    main: 'The Carcino Foundation',
-    sub: 'The official website for The Carcino Foundation (2025-26)',
-    bgVideo: '/video/carcinowebsite.mp4',
-    defaultBg: '#8f29caff'
-  },
-  {
-    id: 3,
-    slug: 'widense-technologies',
-    iconSrc: '/icons/widense.png',
-    main: 'Widense Technologies',
-    sub: 'The official website for Widense Technologies',
-    bgVideo: '/video/widense-tech.mp4',
-    defaultBg: '#f31010ff'
-  },
-  {
-    id: 4,
-    slug: 'vantage',
-    iconSrc: '/icons/vantage.png',
-    main: 'The Vantage App',
-    sub: 'An all in one app for tracking tasks and editing articles.',
-    bgVideo: '/video/vantage.mp4',
-    defaultBg: '#6b2eccff'
-  },
-  {
-    id: 5,
-    slug: 'LuminoLens',
-    iconSrc: '/icons/lumino-lens.png',
-    main: 'LuminoLens',
-    sub: 'Award winning website for 2025 Hackathon in DPSRPK.',
-    bgVideo: '/video/lumino-lens.mp4',
-    defaultBg: '#1cffffff'
-  }
-];
+import { projects as options } from '@/lib/projects';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function Projects() {

@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
@@ -22,10 +23,20 @@ const EXCLUDED_SECTION_IDS = ['hero', 'about', 'skills', 'footer'];
 const SETTLE_DELAY = 180; // ms to wait after scroll stops before settling
 
 export default function ScrollSnapper() {
+  const pathname = usePathname();
   const isAnimatingRef = useRef(false);
   const settleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Disable scroll snapping on /projects page
+    if (pathname?.startsWith('/projects')) {
+      if (isAnimatingRef.current) {
+        gsap.killTweensOf(window);
+        isAnimatingRef.current = false;
+        document.documentElement.style.scrollBehavior = 'auto';
+      }
+      return;
+    }
     let snapPoints: number[] = [];
 
     // Compute dynamically center-aligned snap points for allowed sections
@@ -208,7 +219,7 @@ export default function ScrollSnapper() {
       window.removeEventListener('touchstart', interruptSnap);
       window.removeEventListener('resize', updateSnapPoints);
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }
